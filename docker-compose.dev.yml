@@ -1,0 +1,92 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      target: development
+    restart: unless-stopped
+    container_name: devdle_backend
+    volumes:
+      - ./backend:/data/app
+    env_file:
+      - path: ./backend/.env
+        required: true
+      - path: ./backend/.env.local
+        required: false
+    stdin_open: true
+    tty: true
+    depends_on:
+      - database
+      - cache
+    networks:
+      - devdle_network
+  database:
+    build:
+      context: ./database
+    restart: always
+    container_name: devdle_database
+    env_file:
+      - path: ./database/.env
+        required: true
+      - path: ./database/.env.local
+        required: false
+    volumes:
+      - ./database/data:/pb/pb_data
+      - ./database/hooks:/pb/pb_hooks
+      - ./database/migrations:/pb/pb_migrations
+    networks:
+      - devdle_network
+  cache:
+    image: redis:latest
+    restart: always
+    container_name: devdle_cache
+    command:
+      - /bin/sh
+      - -c
+      - redis-server --requirepass "$${REDIS_PASSWORD:?REDIS_PASSWORD variable is not set}"
+    env_file:
+      - path: ./database/.env
+        required: true
+      - path: ./database/.env.local
+        required: false
+    networks:
+      - devdle_network
+    volumes:
+      - ./database/cache:/data
+  # frontend:
+  #     build:
+  #         context: ./frontend
+  #         target: development
+  #     restart: unless-stopped
+  #     container_name: devdle_frontend
+  #     volumes:
+  #         - ./frontend:/data/app
+  #     env_file:
+  #       - path: ./frontend/.env
+  #         required: true
+  #       - path: ./frontend/.env.local
+  #         required: false
+  #     stdin_open: true
+  #     tty: true
+  #     depends_on:
+  #         - backend
+  #     networks:
+  #         - devdle_network
+  proxy:
+    image: nginx:latest
+    restart: always
+    container_name: devdle_proxy
+    ports:
+      - "0.0.0.0:8800:80"
+    volumes:
+      - ./proxy/nginx.conf:/etc/nginx/nginx.conf
+      - ./proxy/logs:/var/log/nginx
+    depends_on:
+      - backend
+      # - frontend
+    networks:
+      - devdle_network
+
+networks:
+  devdle_network:
+    name: devdle_network
+    driver: bridge

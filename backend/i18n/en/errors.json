@@ -1,0 +1,8 @@
+{
+    "template": "This is a template error message",
+    "unauthorized": "Unauthorized",
+    "internal": "Internal error",
+    "invalid_request": "Invalid request",
+    "not_found": "Not found",
+    "conflict": "Conflict"
+}
