@@ -1,4 +1,12 @@
 # services:
+#   frontend:
+#     build:
+#       context: ./frontend
+#       target: production
+#     restart: unless-stopped
+#     container_name: devdle_frontend
+
+#     backend:
 #     web:
 #         build:
 #             context: .
@@ -12,3 +20,5 @@
 #               required: true
 #         volumes:
 #             - ./logs:/logs
+
+
