@@ -1,19 +1,19 @@
 FROM node:20-alpine AS base
 
-WORKDIR /data
-COPY package.json package-lock.json /data/
-ENV PATH=/data/node_modules/.bin:$PATH
+WORKDIR /app
+COPY package.json package-lock.json /app/
 
 # Development stage
 FROM base AS development
 
 ENV NODE_ENV=development
 RUN npm install --include=dev
+RUN chown -R node:node /app/node_modules
 
 USER node
-WORKDIR /data/app
+WORKDIR /app
 
-CMD ["vite"]
+CMD ["npx", "vite", "--host", "0.0.0.0"]
 
 # Production stage
 FROM base AS build
@@ -21,13 +21,13 @@ FROM base AS build
 ENV NODE_ENV=production
 RUN npm install
 
-COPY . /data/app
-WORKDIR /data/app
+COPY . /app
+WORKDIR /app
 
 RUN npm run build
 
 FROM nginx:alpine AS production
 
-COPY --from=build /data/app/dist /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 
 ENTRYPOINT ["nginx", "-g", "daemon off;"]

@@ -1,17 +1,17 @@
 FROM node:20-alpine AS base
 
-WORKDIR /data
-COPY package.json package-lock.json /data/
-ENV PATH=/data/node_modules/.bin:$PATH
+WORKDIR /app
+COPY package.json package-lock.json /app/
 
 # Development stage
 FROM base AS development
 
 ENV NODE_ENV=development
 RUN npm install --include=dev
+RUN chown -R node /app/node_modules
 
 USER node
-WORKDIR /data/app
+WORKDIR /app
 
 CMD ["npx", "ts-node-dev", "--respawn", "--rs", "-r", "tsconfig-paths/register", "app.ts"]
 
@@ -21,8 +21,8 @@ FROM base AS build
 
 RUN npm install
 
-COPY . /data/app
-WORKDIR /data/app
+COPY . /app
+WORKDIR /app
 
 RUN npx tsc
 
@@ -30,8 +30,8 @@ RUN npx tsc
 FROM node:20-alpine AS production
 ENV NODE_ENV=production
 
-COPY --from=build /data/app/dist /build/dist
-COPY --from=build /data/package.json /data/package-lock.json /build/
+COPY --from=build /app/dist /build/dist
+COPY --from=build /package.json /data/package-lock.json /build/
 
 WORKDIR /build
 RUN npm install --only=production
